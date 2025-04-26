@@ -19,8 +19,8 @@ const ProductosView = () => {
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        const responseProductos = await fetch("https://3.93.215.212/productos/productos");
-        const responseCategorias = await fetch("https://3.93.215.212/productos/categorias");
+        const responseProductos = await fetch("https://3.84.162.25/productos/productos");
+        const responseCategorias = await fetch("https://3.84.162.25/productos/categorias");
         const productosData = await responseProductos.json();
         const categoriasData = await responseCategorias.json();
         setProductos(productosData);
@@ -68,7 +68,7 @@ const ProductosView = () => {
     };
 
     try {
-      const response = await fetch("https://3.93.215.212/productos/productos", {
+      const response = await fetch("https://3.84.162.25/productos/productos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(productoData),
@@ -97,7 +97,7 @@ const ProductosView = () => {
     }
 
     try {
-      const response = await fetch("https://3.93.215.212/productos/categorias", {
+      const response = await fetch("https://3.84.162.25/productos/categorias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formCategoria),
