@@ -15,6 +15,7 @@ const ProductosView = () => {
     nombre: "",
     descripcion: "",
   });
+  const [productoEditado, setProductoEditado] = useState(null); // Estado para el producto en edición
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -27,6 +28,7 @@ const ProductosView = () => {
         setCategorias(categoriasData);
       } catch (error) {
         setMensaje("Error al cargar los datos");
+        console.error("Error:", error);
       }
     };
     fetchDatos();
@@ -43,10 +45,9 @@ const ProductosView = () => {
   };
 
   const handleFiltroChange = (e) => {
-    setFiltro(e.target.value); // Actualiza el término de búsqueda
+    setFiltro(e.target.value);
   };
 
-  // Filtrar productos por nombre o categoría
   const productosFiltrados = productos.filter((producto) =>
     producto.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
     producto.categoria.nombre.toLowerCase().includes(filtro.toLowerCase())
@@ -88,33 +89,73 @@ const ProductosView = () => {
     }
   };
 
-  const agregarCategoria = async (e) => {
+  const editarProducto = async (e) => {
     e.preventDefault();
 
-    if (!formCategoria.nombre || !formCategoria.descripcion) {
-      setMensaje("Por favor, completa todos los campos de la categoría.");
+    if (!formProducto.nombre || !formProducto.precio || !formProducto.cantidad || !formProducto.categoriaId) {
+      setMensaje("Por favor, completa todos los campos del producto.");
       return;
     }
 
+    const productoData = {
+      nombre: formProducto.nombre,
+      precio: parseFloat(formProducto.precio),
+      cantidad: parseInt(formProducto.cantidad, 10),
+      categoria_id: parseInt(formProducto.categoriaId, 10),
+    };
+
     try {
-      const response = await fetch("https://3.84.162.25/productos/categorias", {
-        method: "POST",
+      const response = await fetch(`https://3.84.162.25/productos/productos/${productoEditado.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formCategoria),
+        body: JSON.stringify(productoData),
       });
       const data = await response.json();
 
       if (data.error) {
         setMensaje(data.error);
       } else {
-        setMensaje("¡Categoría agregada exitosamente!");
-        setFormCategoria({ nombre: "", descripcion: "" });
-        setCategorias((prev) => [...prev, data]);
+        setMensaje("¡Producto actualizado exitosamente!");
+        setFormProducto({ nombre: "", precio: "", cantidad: "", categoriaId: "" });
+        setProductos((prev) =>
+          prev.map((prod) => (prod.id === productoEditado.id ? { ...prod, ...data } : prod))
+        );
+        setProductoEditado(null);
       }
     } catch (error) {
-      setMensaje("Error al agregar la categoría.");
+      setMensaje("Error al actualizar el producto.");
       console.error("Error:", error);
     }
+  };
+
+  const eliminarProducto = async (id) => {
+    try {
+      const response = await fetch(`https://3.84.162.25/productos/productos/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        setMensaje(data.error);
+      } else {
+        setMensaje("¡Producto eliminado exitosamente!");
+        setProductos((prev) => prev.filter((prod) => prod.id !== id));
+      }
+    } catch (error) {
+      setMensaje("Error al eliminar el producto.");
+      console.error("Error:", error);
+    }
+  };
+
+  const iniciarEdicionProducto = (producto) => {
+    setProductoEditado(producto);
+    setFormProducto({
+      nombre: producto.nombre,
+      precio: producto.precio,
+      cantidad: producto.cantidad,
+      categoriaId: producto.categoria.id,
+    });
   };
 
   return (
@@ -122,7 +163,6 @@ const ProductosView = () => {
       <h2>Gestión de Productos</h2>
       {mensaje && <p style={{ color: "red" }}>{mensaje}</p>}
 
-      {/* Área de búsqueda */}
       <div style={{ marginBottom: "20px" }}>
         <input
           type="text"
@@ -150,6 +190,7 @@ const ProductosView = () => {
             <th>Precio</th>
             <th>Cantidad</th>
             <th>Categoría</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -160,12 +201,16 @@ const ProductosView = () => {
               <td>${producto.precio}</td>
               <td>{producto.cantidad}</td>
               <td>{producto.categoria.nombre}</td>
+              <td>
+                <button onClick={() => iniciarEdicionProducto(producto)}>Editar</button>
+                <button onClick={() => eliminarProducto(producto.id)}>Eliminar</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <form onSubmit={agregarProducto}>
+      <form onSubmit={productoEditado ? editarProducto : agregarProducto}>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <input
             type="text"
@@ -202,7 +247,7 @@ const ProductosView = () => {
           </select>
         </div>
         <button type="submit" style={{ marginTop: "10px" }}>
-          Agregar Producto
+          {productoEditado ? "Actualizar Producto" : "Agregar Producto"}
         </button>
       </form>
     </div>
